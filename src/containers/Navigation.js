@@ -5,16 +5,18 @@ const Navigation = props => {
   //   console.log('THESE ARE PROPS: ', props);
 
   return (
-      <div className="nav-btn-container">
-        <Button clicked={props.onClickPrevious}>Previous</Button>
+      <div className="nav-container">
 
-        <input
-          type="text"
-          onChange={event => props.onTextEntered(event)}
-          value={props.inputText}
-        />
-        <Button clicked={props.onGoClick}>Go</Button>
-        <Button clicked={props.onClickNext}>Next</Button>
+           <Button disab={false} clicked={props.onClickPrevious}>Previous</Button>
+
+          <Button disab={props.disabled} clicked={props.onGoClick}>Go</Button>
+          <input
+            type="text"
+            onChange={event => props.onTextEntered(event)}
+            value={props.inputText}
+            placeholder="#"
+          />
+          <Button disab={false} clicked={props.onClickNext}>Next</Button>
       </div>
   );
 };

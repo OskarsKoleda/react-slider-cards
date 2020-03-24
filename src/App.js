@@ -2,7 +2,6 @@ import React, { Component } from 'react';
 import images from './assets/data/data';
 
 import Photo from './components/Photo';
-import MiniSlide from './components/MiniSlide';
 import Navigation from './containers/Navigation';
 import './App.scss';
 
@@ -13,9 +12,10 @@ class App extends Component {
     this.goToPreviousSlide = this.prevSlide.bind(this);
     this.state = {
       currentImage: images[0],
-      data: images,
-      enteredText: ''
+      enteredText: '',
+      activeImageIndex: 5
     };
+    this.dataLength = images.length;
   }
 
   // componentDidMount() {
@@ -25,46 +25,63 @@ class App extends Component {
   // }
 
   inputChangeHandler = event => {
-    this.setState({
-      enteredText: event.target.value
-    });
+    const textValue = event.target.value
+    if (textValue.length <= 3) {
+      this.setState({
+        enteredText: textValue
+      });
+    }
   };
 
   onGoButtonClick = () => {
+
     let newIndex = +this.state.enteredText;
-    // console.log("new index: ",newIndex);
+
+    if (isNaN(newIndex)) {
+      this.setState({
+        enteredText: ''
+      });
+      return
+    }
+    console.log(newIndex)
     this.setState({
-      currentImage: images[newIndex]
+      activeImageIndex: newIndex
     });
   };
 
   nextSlide = () => {
     let newIndex;
-    if (this.state.currentImage.id + 1 === images.length) {
-      newIndex = 0;
+    if (this.state.activeImageIndex === this.dataLength) {
+      newIndex = 1;
     } else {
-      newIndex = this.state.currentImage.id + 1;
+      newIndex = this.state.activeImageIndex + 1;
     }
     this.setState({
-      currentImage: images[newIndex]
+      currentImage: images[newIndex],
+      activeImageIndex: newIndex
     });
+
   };
 
   prevSlide = () => {
     let newIndex;
-    if (this.state.currentImage.id === 0) {
-      newIndex = images.length - 1;
+    if (this.state.activeImageIndex === 1) {
+      newIndex = images.length;
     } else {
-      newIndex = this.state.currentImage.id - 1;
+      newIndex = this.state.activeImageIndex- 1;
     }
     this.setState({
-      currentImage: images[newIndex]
+      currentImage: images[newIndex],
+      activeImageIndex: newIndex
     });
+
+
   };
 
   onPhotoClickhandler(photoId) {
     this.setState({
-      currentImage: images[photoId]
+      currentImage: images[photoId],
+      activeImageIndex: photoId + 1
     });
   }
 
@@ -73,23 +90,26 @@ class App extends Component {
 
     return (
       <div className="App">
-        <h1>
+        {/* <h1>
           This is picture slider
           <br />
           Welcome
-        </h1>
+        </h1> */}
         <div className="photo-slider">
           <div
             className="photos-slider-wrapper"
             style={{
-              transform: `translateX(-${this.state.currentImage.id *
-                (100 / this.state.data.length)}%)`
+
+                transform: `translateX(-${(+this.state.activeImageIndex - 1) *
+                  (100 / images.length)}%)`
             }}
           >
-            {this.state.data.map(image => {
+            {images.map(image => {
               const imgClasses = ['photo'];
 
-              if (this.state.currentImage.id === image.id) {
+              
+              if ((this.state.activeImageIndex - 1) === image.id) {
+                console.log(this.state.activeImageIndex - 1)
                 imgClasses.push('active');
               }
               return (
@@ -105,13 +125,16 @@ class App extends Component {
           </div>
         </div>
 
+<div className="nav">
         <Navigation
           onClickPrevious={this.goToPreviousSlide}
           onClickNext={this.goToNextSlide}
           onTextEntered={event => this.inputChangeHandler(event)}
           inputText={this.state.enteredText}
           onGoClick={() => this.onGoButtonClick()}
+          disabled={this.state.enteredText.trim() === ''}
         />
+</div>
       </div>
     );
   }
