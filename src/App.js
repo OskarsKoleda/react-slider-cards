@@ -2,32 +2,48 @@ import React, { Component } from 'react';
 import images from './assets/data/data';
 
 import Photo from './components/Photo';
+import MiniSlide from './components/MiniSlide';
+import Navigation from './containers/Navigation';
 import './App.scss';
 
 class App extends Component {
   constructor(props) {
     super(props);
-    this.handlePhotoClick = this.onPhotoClickhandler.bind(this)
+    this.goToNextSlide = this.nextSlide.bind(this);
+    this.goToPreviousSlide = this.prevSlide.bind(this);
     this.state = {
       currentImage: images[0],
-      data: []
+      data: images,
+      enteredText: ''
     };
   }
 
-  componentDidMount() {
-    this.setState({
-      data: images
-    });
-  }
+  // componentDidMount() {
+  //   this.setState({
+  //     data: images
+  //   });
+  // }
 
+  inputChangeHandler = event => {
+    this.setState({
+      enteredText: event.target.value
+    });
+  };
+
+  onGoButtonClick = () => {
+    let newIndex = +this.state.enteredText;
+    // console.log("new index: ",newIndex);
+    this.setState({
+      currentImage: images[newIndex]
+    });
+  };
 
   nextSlide = () => {
     let newIndex;
-
-    if (this.state.currentImage.id + 1 === images.length){
-      newIndex = 0
+    if (this.state.currentImage.id + 1 === images.length) {
+      newIndex = 0;
     } else {
-       newIndex = this.state.currentImage.id + 1;
+      newIndex = this.state.currentImage.id + 1;
     }
     this.setState({
       currentImage: images[newIndex]
@@ -36,11 +52,10 @@ class App extends Component {
 
   prevSlide = () => {
     let newIndex;
-
-    if (this.state.currentImage.id === 0){
+    if (this.state.currentImage.id === 0) {
       newIndex = images.length - 1;
     } else {
-       newIndex = this.state.currentImage.id - 1;
+      newIndex = this.state.currentImage.id - 1;
     }
     this.setState({
       currentImage: images[newIndex]
@@ -48,7 +63,6 @@ class App extends Component {
   };
 
   onPhotoClickhandler(photoId) {
-    console.log("Logging ID: ", photoId)
     this.setState({
       currentImage: images[photoId]
     });
@@ -56,19 +70,18 @@ class App extends Component {
 
   render() {
     console.log('RENDER');
+
     return (
       <div className="App">
-        
-        <h1>This is picture slider. Welcome.</h1>
-
+        <h1>
+          This is picture slider
+          <br />
+          Welcome
+        </h1>
         <div className="photo-slider">
           <div
             className="photos-slider-wrapper"
-            // style={{
-            //   transform: `translateX(-${this.state.currentImage.id *
-            //     (100 / this.state.data.length)}%)`
-            // }}
-                        style={{
+            style={{
               transform: `translateX(-${this.state.currentImage.id *
                 (100 / this.state.data.length)}%)`
             }}
@@ -91,8 +104,14 @@ class App extends Component {
             })}
           </div>
         </div>
-        <button onClick={() => this.nextSlide()}>Next Image</button>
-        <button onClick={() => this.prevSlide()}>Previous Image</button>
+
+        <Navigation
+          onClickPrevious={this.goToPreviousSlide}
+          onClickNext={this.goToNextSlide}
+          onTextEntered={event => this.inputChangeHandler(event)}
+          inputText={this.state.enteredText}
+          onGoClick={() => this.onGoButtonClick()}
+        />
       </div>
     );
   }
