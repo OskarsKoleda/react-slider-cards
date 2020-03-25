@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import images from './assets/data/data';
+import _ from 'lodash'
 
 import Photo from './components/Photo';
 import NavigationDesktop from './containers/NavigationDesktop';
@@ -16,27 +17,43 @@ class App extends Component {
     this.goToNextSlide = this.nextSlide.bind(this);
     this.goToPreviousSlide = this.prevSlide.bind(this);
     this.lastTouch = 0;
-    this.updateDimensions = this.updateDim.bind(this);
+    // this.updateDimensions = this.updateDim.bind(this);
     this.dataLength = images.length;
-    this.startCoord = 0;
     this.state = {
       currentImage: images[0],
       enteredText: '',
       activeImageIndex: 5,
       windowWidth: 0,
-      currentIndex: 0,
-      movement: 0
+      dragStart: 0,
+      dragStartTime: new Date(),
+      index: 0,
+      lastIndex: 0
     };
   }
 
   componentDidMount() {
     // this.updateDimensions();
-    window.addEventListener('resize', this.updateDimensions);
+    window.addEventListener('resize', this.throttleHandleWindowResize);
   }
 
-  updateDim() {
-    this.setState({ windowWidth: window.innerWidth });
-  }
+//   shouldComponentUpdate(nextProps, nextState) {
+//     console.log(nextState)
+    
+//     if(nextState.data === this.state.data)
+//     return false
+// return true
+//   }
+
+
+  throttleHandleWindowResize = _.debounce(e => {
+    console.log('Debounced!')
+    this.setState({windowWidth: window.innerWidth})
+  }, 200)
+  
+
+  // updateDim() {
+  //   this.setState({ windowWidth: window.innerWidth });
+  // }
 
   inputChangeHandler = event => {
     const textValue = event.target.value;
@@ -96,87 +113,80 @@ class App extends Component {
   }
 
   handleTouchStart(event) {
-    this.startCoord = event.nativeEvent.touches[0].clientX;
-  }
-
-  handleTouchMove = event => {
-    const delta = this.lastTouch - event.nativeEvent.touches[0].clientX;
-    this.lastTouch = event.nativeEvent.touches[0].clientX;
-
-    this.handleMovement(delta);
-
-    // console.log("DELTA: ", delta);
-    // console.log("LAST TOUCH: ", this.lastTouch);
-  };
-
-  handleTouchEnd = () => {
-    this.handleMovementEnd();
-    this.lastTouch = 0;
-
-  };
-
-  handleMovement = delta => {
-    this.setState(state => {
-      const maxLength = this.dataLength - 1;
-      let nextMovement = state.movement + delta;
-      if (nextMovement < 0) {
-        nextMovement = 0;
-      }
-
-      if (nextMovement > maxLength * IMG_WIDTH) {
-        nextMovement = maxLength * IMG_WIDTH;
-      }
-
-      return {
-        movement: nextMovement,
-        transitionDuration: '0s'
-      };
-    });
-  };
-
-  handleMovementEnd = () => {
-    const { movement, currentIndex } = this.state;
-
-    const endPosition = movement / IMG_WIDTH;
-    const endPartial = endPosition % 1
-    const endingIndex = endPosition - endPartial;
-    const deltaInteger = endingIndex - currentIndex;
-    let nextIndex = endingIndex;
-    // console.log('END POSITION: ', endPosition);
-    // console.log('END PARTIAL: ', endPartial);
-    // console.log('END INDEX: ', endingIndex);
-    // console.log('DELTA INTEGER: ', deltaInteger);
-
-    if (deltaInteger >=0) {
-      if (endPartial >= 0.1) {
-        nextIndex += 1;
-      }
-    } else if (deltaInteger<0) {
-      nextIndex = currentIndex - Math.abs(deltaInteger);
-      if (endPartial > 0.9) {
-        nextIndex += 1;
-      }
-    }
-    console.log("NEXT INDEX: ",nextIndex);
-
-    this.transitionTo(nextIndex, Math.min(0.5, 1 - Math.abs(endPartial)))
-  };
-
-  transitionTo = (index, duration) => {
+    const startCoord = event.nativeEvent.touches[0].clientX;
     this.setState({
-      currentIndex: index,
-      movement: index * IMG_WIDTH,
-      transitionDuration: `${duration}s`
+      dragStart: startCoord,
+      dragStartTime: new Date()
     })
   }
 
+  handleTouchMove = event => {
+
+    const x = event.nativeEvent.touches[0].clientX;
+    const offset = this.state.dragStart - x;
+    const percentageOffset = offset / IMG_WIDTH;
+    const newIndex = this.state.lastIndex + percentageOffset;
+    const SCROLL_OFFSET_TO_STOP_SCROLL = 30;
+
+    if (Math.abs(offset) > SCROLL_OFFSET_TO_STOP_SCROLL) {
+      // console.log('OFFSET BIGGER SCROLL OFFSET TO STOP SCROLL')
+    }
+
+    // console.log('NEW INDEX: ', newIndex)
+    this.setState({
+      index: newIndex
+    })
+  };
+
+  handleTouchEnd = () => {
+    const {
+      dragStartTime,
+      index,
+      lastIndex,
+    } = this.state;
+
+    const timeElapsed = new Date().getTime() - dragStartTime.getTime();
+    const offset = lastIndex - index;
+    const velocity = Math.round(offset / timeElapsed * 10000)
+
+    let newIndex = Math.round(index);
+
+    if (Math.abs(velocity) > 5) { 
+      newIndex = velocity < 0 ? lastIndex + 1 : lastIndex - 1
+    }
+
+    if (newIndex < 0) {
+      newIndex = 0
+    } else if (newIndex >= this.dataLength) {
+      newIndex = this.dataLength - 1;
+    }
+
+    this.setState({ 
+      dragStart: 0,
+      index: newIndex,
+      lastIndex: newIndex,
+    })
+
+    console.log('NEW INDEX: ', newIndex)
+    // console.log('OFFSET: ', offset)
+    // console.log('VELOCITY: ', velocity)
+  };
+
+  handleMovement = delta => {
+
+
+  };
+
+  handleMovementEnd = () => {
+
+
+  };
+
+
   render() {
-    // console.log('RENDER');
-
-    // console.log(this.state.movement);
-    // console.log(this.state.transitionDuration);
-
+    console.log('RENDER')
     let navigationPanel = null;
+    console.log('WINDOW WIDTH: ', this.state.windowWidth)
 
     if (this.state.windowWidth > 600) {
       navigationPanel = (
@@ -207,7 +217,6 @@ class App extends Component {
     }
 
 
-    console.log("TRANS: ", this.state.movement * -1);
     return (
       <div className="App">
         {/* <h1>
@@ -223,13 +232,18 @@ class App extends Component {
             //     (100 / images.length)}%)`
             // }}
             style={{
-              transform: `translateX(-${this.state.movement * -1}px)`
+              transform: `translateX(-${(+this.state.index) *
+                (100 / images.length)}%)`
             }}
           >
             {images.map(image => {
               const imgClasses = ['photo'];
 
-              if (this.state.activeImageIndex - 1 === image.id) {
+              // if (this.state.activeImageIndex - 1 === image.id) {
+              //   imgClasses.push('active');
+              // }
+
+              if (this.state.index === image.id) {
                 imgClasses.push('active');
               }
               return (
@@ -241,7 +255,7 @@ class App extends Component {
                   onClickHandler={() => this.onPhotoClickhandler(image.id)}
                   onTouchStart={e => this.handleTouchStart(e)}
                   onTouchMove={e => this.handleTouchMove(e)}
-                  onTouchEnd={() => this.handleMovementEnd()}
+                  onTouchEnd={() => this.handleTouchEnd()}
                 />
               );
             })}
