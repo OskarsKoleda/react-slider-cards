@@ -1,14 +1,10 @@
 import React, { Component } from 'react';
 import images from './assets/data/data';
-import _ from 'lodash'
+import _ from 'lodash';
 
 import Photo from './components/Photo';
 import NavigationDesktop from './containers/NavigationDesktop';
-import NavigationMobile from './containers/NavigationMobile';
 import './sass/App.scss';
-
-const IMG_WIDTH = 300;
-const IMG_HEIGHT = 500;
 
 // https://xxxxxx.com/Stanko/react-slider/blob/gh-pages/slider.js
 class App extends Component {
@@ -19,41 +15,30 @@ class App extends Component {
     this.lastTouch = 0;
     // this.updateDimensions = this.updateDim.bind(this);
     this.dataLength = images.length;
+
     this.state = {
-      currentImage: images[0],
       enteredText: '',
-      activeImageIndex: 5,
       windowWidth: 0,
-      dragStart: 0,
-      dragStartTime: new Date(),
-      index: 0,
-      lastIndex: 0
+
+      index: 5,
+
+      left: 0,
+      originalOffset: 0,
+      touchStartX: 0,
+      prevTouchX: 0,
+      beingTouched: false,
     };
   }
 
   componentDidMount() {
-    // this.updateDimensions();
+    this.setState({ windowWidth: window.innerWidth });
     window.addEventListener('resize', this.throttleHandleWindowResize);
   }
 
-//   shouldComponentUpdate(nextProps, nextState) {
-//     console.log(nextState)
-    
-//     if(nextState.data === this.state.data)
-//     return false
-// return true
-//   }
-
-
   throttleHandleWindowResize = _.debounce(e => {
-    console.log('Debounced!')
-    this.setState({windowWidth: window.innerWidth})
-  }, 200)
-  
-
-  // updateDim() {
-  //   this.setState({ windowWidth: window.innerWidth });
-  // }
+    console.log('Debounced!');
+    this.setState({ windowWidth: window.innerWidth });
+  }, 100);
 
   inputChangeHandler = event => {
     const textValue = event.target.value;
@@ -73,122 +58,111 @@ class App extends Component {
       });
       return;
     }
-    console.log(newIndex);
+
+    if (newIndex < 1 || newIndex > this.dataLength) {
+      return;
+    }
     this.setState({
-      activeImageIndex: newIndex
+      index: newIndex - 1
     });
   };
 
   nextSlide = () => {
     let newIndex;
-    if (this.state.activeImageIndex === this.dataLength) {
-      newIndex = 1;
+    if (this.state.index === this.dataLength - 1) {
+      newIndex = 0;
     } else {
-      newIndex = this.state.activeImageIndex + 1;
+      newIndex = this.state.index + 1;
     }
     this.setState({
-      currentImage: images[newIndex],
-      activeImageIndex: newIndex
+      index: newIndex
     });
   };
 
   prevSlide = () => {
     let newIndex;
-    if (this.state.activeImageIndex === 1) {
-      newIndex = images.length;
+    if (this.state.index === 0) {
+      newIndex = images.length - 1;
     } else {
-      newIndex = this.state.activeImageIndex - 1;
+      newIndex = this.state.index - 1;
     }
     this.setState({
-      currentImage: images[newIndex],
-      activeImageIndex: newIndex
+      index: newIndex
     });
   };
 
-  onPhotoClickhandler(photoId) {
+  onPhotoClickHandler(photoId) {
     this.setState({
-      currentImage: images[photoId],
-      activeImageIndex: photoId + 1
+      index: photoId
     });
   }
 
   handleTouchStart(event) {
-    const startCoord = event.nativeEvent.touches[0].clientX;
-    this.setState({
-      dragStart: startCoord,
-      dragStartTime: new Date()
-    })
+    console.log(event.targetTouches);
+    this.handleMotionStart(event.targetTouches[0].clientX);
   }
 
-  handleTouchMove = event => {
+  handleMotionStart(e) {
+    console.log('HANDLE MOTION START: ', e);
 
-    const x = event.nativeEvent.touches[0].clientX;
-    const offset = this.state.dragStart - x;
-    const percentageOffset = offset / IMG_WIDTH;
-    const newIndex = this.state.lastIndex + percentageOffset;
-    const SCROLL_OFFSET_TO_STOP_SCROLL = 30;
 
-    if (Math.abs(offset) > SCROLL_OFFSET_TO_STOP_SCROLL) {
-      // console.log('OFFSET BIGGER SCROLL OFFSET TO STOP SCROLL')
-    }
-
-    // console.log('NEW INDEX: ', newIndex)
     this.setState({
-      index: newIndex
-    })
-  };
+      originalOffset: this.state.left,
+      touchStartX: e,
+      beingTouched: true,
+
+    });
+  }
+
+  handleTouchMove(touchMoveEvent) {
+    this.handleMove(touchMoveEvent.targetTouches[0].clientX);
+  }
+
+  handleMove(clientX) {
+    if (this.state.beingTouched) {
+      const touchX = clientX;
+      let deltaX = touchX - this.state.touchStartX + this.state.originalOffset;
+      this.setState({
+        left: deltaX,
+        prevTouchX: touchX
+      });
+    }
+  }
 
   handleTouchEnd = () => {
-    const {
-      dragStartTime,
-      index,
-      lastIndex,
-    } = this.state;
+    this.handleEnd();
+  };
 
-    const timeElapsed = new Date().getTime() - dragStartTime.getTime();
-    const offset = lastIndex - index;
-    const velocity = Math.round(offset / timeElapsed * 10000)
-
-    let newIndex = Math.round(index);
-
-    if (Math.abs(velocity) > 5) { 
-      newIndex = velocity < 0 ? lastIndex + 1 : lastIndex - 1
+  handleEnd() {
+    let moveSlides = this.state.left / 150;
+    moveSlides = Math.round(moveSlides);
+    if (moveSlides > 1) {
+      moveSlides = 1;
+    } else if (moveSlides < -1) {
+      moveSlides = -1;
     }
+    let newIndex = this.state.index - moveSlides;
 
-    if (newIndex < 0) {
-      newIndex = 0
-    } else if (newIndex >= this.dataLength) {
+    if (newIndex > this.dataLength - 1) {
+      newIndex = 0;
+    } else if (newIndex < 0) {
       newIndex = this.dataLength - 1;
     }
 
-    this.setState({ 
-      dragStart: 0,
+    this.setState({
+      velocity: this.state.velocity,
+      touchStartX: 0,
+      beingTouched: false,
       index: newIndex,
-      lastIndex: newIndex,
-    })
-
-    console.log('NEW INDEX: ', newIndex)
-    // console.log('OFFSET: ', offset)
-    // console.log('VELOCITY: ', velocity)
-  };
-
-  handleMovement = delta => {
-
-
-  };
-
-  handleMovementEnd = () => {
-
-
-  };
-
+      left: 0
+    });
+  }
 
   render() {
-    console.log('RENDER')
+    // console.log('RENDER');
     let navigationPanel = null;
-    console.log('WINDOW WIDTH: ', this.state.windowWidth)
-
-    if (this.state.windowWidth > 600) {
+    // if (this.state.windowWidth > 600) {
+      if (window.innerWidth > 600) {
       navigationPanel = (
         <div className="nav">
           <NavigationDesktop
@@ -201,48 +175,20 @@ class App extends Component {
           />
         </div>
       );
-    } else {
-      navigationPanel = (
-        <div className="nav">
-          <NavigationMobile
-            onClickPrevious={this.goToPreviousSlide}
-            onClickNext={this.goToNextSlide}
-            onTextEntered={event => this.inputChangeHandler(event)}
-            inputText={this.state.enteredText}
-            onGoClick={() => this.onGoButtonClick()}
-            disabled={this.state.enteredText.trim() === ''}
-          />
-        </div>
-      );
     }
-
 
     return (
       <div className="App">
-        {/* <h1>
-          This is picture slider
-          <br />
-          Welcome
-        </h1> */}
         <div className="photo-slider">
           <div
             className="photos-slider-wrapper"
-            // style={{
-            //   transform: `translateX(-${(+this.state.activeImageIndex - 1) *
-            //     (100 / images.length)}%)`
-            // }}
             style={{
-              transform: `translateX(-${(+this.state.index) *
+              transform: `translateX(-${+this.state.index *
                 (100 / images.length)}%)`
             }}
           >
             {images.map(image => {
               const imgClasses = ['photo'];
-
-              // if (this.state.activeImageIndex - 1 === image.id) {
-              //   imgClasses.push('active');
-              // }
-
               if (this.state.index === image.id) {
                 imgClasses.push('active');
               }
@@ -252,7 +198,7 @@ class App extends Component {
                   index={image.id}
                   key={image.id}
                   myImg={image.src}
-                  onClickHandler={() => this.onPhotoClickhandler(image.id)}
+                  onClickHandler={() => this.onPhotoClickHandler(image.id)}
                   onTouchStart={e => this.handleTouchStart(e)}
                   onTouchMove={e => this.handleTouchMove(e)}
                   onTouchEnd={() => this.handleTouchEnd()}

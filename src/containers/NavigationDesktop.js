@@ -10,7 +10,7 @@ const NavigationDesktop = props => {
       </Button>
 
       <Button disab={props.disabled} clicked={props.onGoClick}>
-        Go
+        Go To Slide
       </Button>
       <input
         type="text"

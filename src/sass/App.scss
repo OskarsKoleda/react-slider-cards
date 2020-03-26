@@ -1,8 +1,9 @@
 @mixin respond($breakpoint) {
   @if $breakpoint == phone {
-    @media (max-width: 37.5em) { // 600px
+    @media (max-width: 37.5em) {
+      // 600px
       @content;
-    } 
+    }
   }
 }
 
@@ -16,6 +17,7 @@
 * {
   margin: 0;
   padding: 0;
+  font-family: 'Sen', sans-serif;
 }
 
 *,
@@ -28,11 +30,7 @@ html {
   text-align: center;
   box-sizing: border-box;
   font-size: 62.5%;
-  background-color: #5796c1;
-
-  @include respond(phone) {
-    font-size: 50%;
-  }
+  background-color: #efe4ae;
 }
 
 .body {
@@ -40,31 +38,35 @@ html {
 }
 
 .App {
+
   margin: 0 auto;
   max-width: 80%;
-  background-color: #343434;
+  // background-color: #757575;
 
   @include respond(phone) {
     max-width: 90%;
+    position: relative;
+    margin: 0;
+    top: 50vh;
+    left: 50vw;
+    transform: translate(-50%, -50%);
   }
 }
 
 .photo-slider {
   position: relative;
-  height: 70vh;
+  height: 75vh;
   overflow: hidden;
   margin: 0 auto;
 
   @include respond(phone) {
-    height: 80vh;
+    height: 90vh;
   }
 }
 
 .photos-slider-wrapper {
   display: flex;
-  height: 500px;
   position: absolute;
-  // background-color: #ade134;
   left: 50%;
   top: 50%;
   transition: transform 300ms cubic-bezier(0.455, 0.03, 0.515, 0.955);
@@ -72,9 +74,9 @@ html {
 
   .photo {
     min-width: 300px;
-    // background-color: var(--color-secondary-1);
     opacity: 0.4;
     cursor: pointer;
+
     transform: scale(0.7);
     transition: opacity 300ms linear,
       transform 300ms cubic-bezier(0.455, 0.03, 0.515, 0.955);
@@ -103,14 +105,13 @@ html {
 }
 
 .nav {
-  height: 30vh;
-  // background-color: rgb(130, 150, 119);
+  height: 25vh;
   display: flex;
   align-items: center;
   justify-content: center;
 
   @include respond(phone) {
-    height: 20vh;
+    display: none;
   }
 }
 
@@ -121,7 +122,7 @@ html {
   height: 30%;
 
   @include respond(phone) {
-    height: 40%;
+    display: none;
   }
 }
 
@@ -160,6 +161,11 @@ html {
     border: none;
   }
 }
+.btn.unique {
+  @include respond(phone) {
+    display: none;
+  }
+}
 
 input {
   max-width: 100px;
@@ -177,7 +183,4 @@ input:focus {
 
 input:focus::placeholder {
   color: transparent;
-}
-
-@media (max-width: 600px) {
 }
