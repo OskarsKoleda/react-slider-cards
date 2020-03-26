@@ -7,12 +7,12 @@
   }
 }
 
-:root {
-  --color-primary: #d46f6f;
-  --color-secondary-1: #68edc6;
-  --color-secondary-2: #56c2a3;
-  --color-ternary: #dffdff;
-}
+// :root {
+//   --color-primary: #d46f6f;
+//   --color-secondary-1: #68edc6;
+//   --color-secondary-2: #56c2a3;
+//   --color-ternary: #dffdff;
+// }
 
 * {
   margin: 0;
@@ -38,10 +38,8 @@ html {
 }
 
 .App {
-
   margin: 0 auto;
   max-width: 80%;
-  // background-color: #757575;
 
   @include respond(phone) {
     max-width: 90%;

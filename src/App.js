@@ -1,10 +1,11 @@
-import React, { Component } from 'react';
-import images from './assets/data/data';
-import _ from 'lodash';
+import React, { Component } from "react";
+import debounce from "lodash/debounce";
 
-import Photo from './components/Photo';
-import NavigationDesktop from './containers/NavigationDesktop';
-import './sass/App.scss';
+import NavigationDesktop from "./containers/Navigation";
+import Slider from "./containers/Slider";
+import images from "./assets/data/data";
+
+import "./sass/App.scss";
 
 // https://xxxxxx.com/Stanko/react-slider/blob/gh-pages/slider.js
 class App extends Component {
@@ -13,30 +14,34 @@ class App extends Component {
     this.goToNextSlide = this.nextSlide.bind(this);
     this.goToPreviousSlide = this.prevSlide.bind(this);
     this.lastTouch = 0;
-    // this.updateDimensions = this.updateDim.bind(this);
     this.dataLength = images.length;
 
+    // this.onPhotoClickHandlerTest = id =>
+    //   this.onPhotoClickHandler.bind(this, id);
+    // this.updateDimensions = this.updateDim.bind(this);
+
     this.state = {
-      enteredText: '',
+      enteredText: "",
       windowWidth: 0,
-
       index: 5,
-
       left: 0,
       originalOffset: 0,
       touchStartX: 0,
       prevTouchX: 0,
-      beingTouched: false,
+      beingTouched: false
     };
   }
 
   componentDidMount() {
     this.setState({ windowWidth: window.innerWidth });
-    window.addEventListener('resize', this.throttleHandleWindowResize);
+    window.addEventListener("resize", this.debounceHandleWindowResize);
   }
 
-  throttleHandleWindowResize = _.debounce(e => {
-    console.log('Debounced!');
+  componentWillUnmount() {
+    window.removeEventListener("resize", this.debounceHandleWindowResize);
+  }
+
+  debounceHandleWindowResize = debounce(() => {
     this.setState({ windowWidth: window.innerWidth });
   }, 100);
 
@@ -51,10 +56,9 @@ class App extends Component {
 
   onGoButtonClick = () => {
     let newIndex = +this.state.enteredText;
-
     if (isNaN(newIndex)) {
       this.setState({
-        enteredText: ''
+        enteredText: ""
       });
       return;
     }
@@ -91,49 +95,33 @@ class App extends Component {
     });
   };
 
-  onPhotoClickHandler(photoId) {
+  onPhotoClickHandler = photoId => {
     this.setState({
       index: photoId
     });
-  }
+  };
 
-  handleTouchStart(event) {
-    console.log(event.targetTouches);
-    this.handleMotionStart(event.targetTouches[0].clientX);
-  }
-
-  handleMotionStart(e) {
-    console.log('HANDLE MOTION START: ', e);
-
-
+  handleMotionStart = event => {
     this.setState({
       originalOffset: this.state.left,
-      touchStartX: e,
-      beingTouched: true,
-
+      touchStartX: event.targetTouches[0].clientX,
+      beingTouched: true
     });
-  }
+  };
 
-  handleTouchMove(touchMoveEvent) {
-    this.handleMove(touchMoveEvent.targetTouches[0].clientX);
-  }
-
-  handleMove(clientX) {
+  handleMove = event => {
+    const moveCoordX = event.targetTouches[0].clientX;
     if (this.state.beingTouched) {
-      const touchX = clientX;
+      const touchX = moveCoordX;
       let deltaX = touchX - this.state.touchStartX + this.state.originalOffset;
       this.setState({
         left: deltaX,
         prevTouchX: touchX
       });
     }
-  }
-
-  handleTouchEnd = () => {
-    this.handleEnd();
   };
 
-  handleEnd() {
+  handleEnd = () => {
     let moveSlides = this.state.left / 150;
     moveSlides = Math.round(moveSlides);
     if (moveSlides > 1) {
@@ -141,6 +129,7 @@ class App extends Component {
     } else if (moveSlides < -1) {
       moveSlides = -1;
     }
+
     let newIndex = this.state.index - moveSlides;
 
     if (newIndex > this.dataLength - 1) {
@@ -156,13 +145,12 @@ class App extends Component {
       index: newIndex,
       left: 0
     });
-  }
+  };
 
   render() {
-    // console.log('RENDER');
+    // console.log("RENDER");
     let navigationPanel = null;
-    // if (this.state.windowWidth > 600) {
-      if (window.innerWidth > 600) {
+    if (this.state.windowWidth > 600) {
       navigationPanel = (
         <div className="nav">
           <NavigationDesktop
@@ -171,7 +159,8 @@ class App extends Component {
             onTextEntered={event => this.inputChangeHandler(event)}
             inputText={this.state.enteredText}
             onGoClick={() => this.onGoButtonClick()}
-            disabled={this.state.enteredText.trim() === ''}
+            disabled={this.state.enteredText.trim() === ""}
+            index={this.state.index}
           />
         </div>
       );
@@ -179,34 +168,14 @@ class App extends Component {
 
     return (
       <div className="App">
-        <div className="photo-slider">
-          <div
-            className="photos-slider-wrapper"
-            style={{
-              transform: `translateX(-${+this.state.index *
-                (100 / images.length)}%)`
-            }}
-          >
-            {images.map(image => {
-              const imgClasses = ['photo'];
-              if (this.state.index === image.id) {
-                imgClasses.push('active');
-              }
-              return (
-                <Photo
-                  classes={imgClasses}
-                  index={image.id}
-                  key={image.id}
-                  myImg={image.src}
-                  onClickHandler={() => this.onPhotoClickHandler(image.id)}
-                  onTouchStart={e => this.handleTouchStart(e)}
-                  onTouchMove={e => this.handleTouchMove(e)}
-                  onTouchEnd={() => this.handleTouchEnd()}
-                />
-              );
-            })}
-          </div>
-        </div>
+        <Slider
+          index={this.state.index}
+          imagesLength={this.dataLength}
+          onImageClickHandler={this.onPhotoClickHandler}
+          onTouchStartHandler={this.handleMotionStart}
+          onTouchMoveHandler={this.handleMove}
+          onTouchEndHandler={this.handleEnd}
+        />
         {navigationPanel}
       </div>
     );

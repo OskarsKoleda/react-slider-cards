@@ -1,7 +1,7 @@
-import React from 'react';
-import Button from '../components/Button';
+import React from "react";
+import Button from "../components/Button";
 
-const NavigationDesktop = props => {
+const Navigation = React.memo(props => {
 
   return (
     <div className="nav-container">
@@ -10,7 +10,7 @@ const NavigationDesktop = props => {
       </Button>
 
       <Button disab={props.disabled} clicked={props.onGoClick}>
-        Go To Slide
+        Go&nbsp;To&nbsp;Slide
       </Button>
       <input
         type="text"
@@ -23,6 +23,6 @@ const NavigationDesktop = props => {
       </Button>
     </div>
   );
-};
+});
 
-export default NavigationDesktop;
+export default Navigation;
